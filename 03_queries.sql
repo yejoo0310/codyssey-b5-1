@@ -129,17 +129,31 @@ ORDER BY price DESC, id ASC;
 
 -- query 1. 메뉴 가격 수정 (UPDATE 사용)
 -- description: 아메리카노 가격을 3500원에서 4000원으로 수정
+
+-- UPDATE 전 확인
+SELECT id, name, price
+FROM menu
+WHERE name = '아메리카노';
+
+-- UPDATE
 UPDATE menu
 SET price = 4000
 WHERE name = '아메리카노';
 
--- UPDATE 확인
+-- UPDATE 후 확인
 SELECT id, name, price
 FROM menu
 WHERE name = '아메리카노';
 
 -- query 2. 취소 주문의 주문 상세 삭제 (DELETE 사용)
 -- description: CANCELED 상태인 5번 주문의 주문 상세 데이터 삭제
+
+-- DELETE 전 확인
+SELECT *
+FROM order_item
+WHERE order_id = 5;
+
+-- DELETE
 DELETE 
 FROM order_item
 WHERE order_id IN (
@@ -148,7 +162,7 @@ WHERE order_id IN (
     WHERE id = 5 AND status = 'CANCELED';
 )
 
--- DELETE 확인
+-- DELETE 후 확인
 SELECT *
 FROM order_item
 WHERE order_id = 5;
