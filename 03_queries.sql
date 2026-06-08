@@ -145,7 +145,7 @@ FROM order_item
 WHERE order_id IN (
     SELECT id
     FROM orders
-    WHERE id = 5 AND status = 'CANCELED'
+    WHERE id = 5 AND status = 'CANCELED';
 )
 
 -- DELETE 확인
