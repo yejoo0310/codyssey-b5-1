@@ -1,0 +1,128 @@
+============================================================
+1. 조인 1개를 두 방식으로 풀기
+============================================================
+
+query 1. JOIN 방식
+description: 주문 이력이 있는 고객 조회
+customer_id  customer_name  phone          email                   
+-----------  -------------  -------------  ------------------------
+1            김민준         010-1000-0001  minjun.kim@example.com  
+2            이서연         010-1000-0002  seoyeon.lee@example.com 
+3            박지훈         010-1000-0003  jihoon.park@example.com 
+4            최하은         010-1000-0004  haeun.choi@example.com  
+5            정도윤         010-1000-0005  doyoon.jung@example.com 
+6            강유진         010-1000-0006  yujin.kang@example.com  
+7            조서준         010-1000-0007  seojun.cho@example.com  
+8            윤지아         010-1000-0008  jia.yoon@example.com    
+9            장현우         010-1000-0009  hyunwoo.jang@example.com
+10           임수빈         010-1000-0010  subin.lim@example.com   
+
+query 2. 서브 쿼리 방식
+description: 주문 이력이 있는 고객 id 목록을 먼저 구한 뒤, 해당 고객만 조회
+customer_id  customer_name  phone          email                   
+-----------  -------------  -------------  ------------------------
+1            김민준         010-1000-0001  minjun.kim@example.com  
+2            이서연         010-1000-0002  seoyeon.lee@example.com 
+3            박지훈         010-1000-0003  jihoon.park@example.com 
+4            최하은         010-1000-0004  haeun.choi@example.com  
+5            정도윤         010-1000-0005  doyoon.jung@example.com 
+6            강유진         010-1000-0006  yujin.kang@example.com  
+7            조서준         010-1000-0007  seojun.cho@example.com  
+8            윤지아         010-1000-0008  jia.yoon@example.com    
+9            장현우         010-1000-0009  hyunwoo.jang@example.com
+10           임수빈         010-1000-0010  subin.lim@example.com   
+
+description: JOIN과 서브쿼리 방식의 차이점
+JOIN 방식은 customer와 orders를 직접 연결하므로 두 테이블의 컬럼을 함께 조회하기 좋다.
+예를 들어 고객명과 주문일, 주문상태를 한 번에 보고 싶을 때 적합하다.
+서브쿼리 방식은 특정 조건을 만족하는 대상만 필터링할 때 읽기 쉽다.
+현재 요구사항처럼 고객 정보만 필요하면 서브쿼리 방식도 충분히 명확하다.
+하지만 주문 정보까지 함께 출력해야 한다면 JOIN 방식이 더 적합하다.
+
+============================================================
+2. 데이터 정합성 깨뜨려 보기
+============================================================
+
+query 1. FK 에러가 나는 쿼리
+description: order_item.menu_id는 menu.id를 참조한다.
+description: 현재 menu 테이블에 id=999인 메뉴가 없으므로 FOREIGN KEY constraint failed 에러가 발생한다.
+
+query 2. 고치는 방법 1 - 존재하는 menu_id 사용
+description: 이미 존재하는 menu_id=20을 사용하여 order_item 데이터를 입력
+
+query 3. order_item 입력 결과 확인
+description: id=100인 주문 상세 데이터가 입력되었는지 확인
+id   order_id  menu_id  quantity  unit_price
+---  --------  -------  --------  ----------
+100  1         20       1         5000      
+
+query 4. 테스트용 order_item 데이터 삭제
+description: 다음 테스트를 위해 id=100인 order_item 데이터를 삭제
+
+query 5. 삭제 결과 확인
+description: id=100인 order_item 데이터가 삭제되어 조회 결과가 없어야 한다
+
+query 6. 고치는 방법 2 - 부모 데이터 먼저 입력
+description: order_item이 참조할 수 있도록 menu 테이블에 id=999인 부모 데이터를 먼저 입력
+
+query 7. 부모 데이터 입력 결과 확인
+description: menu 테이블에 id=999인 테스트 메뉴가 입력되었는지 확인
+id   category_id  name         price  is_available
+---  -----------  -----------  -----  ------------
+999  10           테스트 음료  5000   1           
+
+query 8. 부모 데이터를 참조하는 자식 데이터 입력
+description: menu_id=999가 menu 테이블에 존재하므로 order_item 입력이 가능하다
+
+query 9. order_item 입력 결과 확인
+description: id=100인 order_item 데이터가 menu_id=999를 참조하며 입력되었는지 확인
+id   order_id  menu_id  quantity  unit_price
+---  --------  -------  --------  ----------
+100  1         999      1         5000      
+
+query 10. 테스트용 order_item 데이터 삭제
+description: 테스트 후 자식 데이터인 order_item을 먼저 삭제
+
+query 11. 테스트용 menu 데이터 삭제
+description: 자식 데이터를 삭제한 뒤 부모 데이터인 menu를 삭제
+
+query 12. 테스트 데이터 삭제 결과 확인
+description: id=100인 order_item과 id=999인 menu가 모두 삭제되어 조회 결과가 없어야 한다
+
+description: FK 제약조건 정리
+order_item.menu_id는 menu.id를 참조하는 FK이다.
+존재하지 않는 menu_id=999를 order_item에 입력하려고 하면 참조 대상이 없기 때문에 입력이 막힌다.
+이를 해결하려면 이미 존재하는 menu_id를 사용하거나, menu 테이블에 부모 데이터를 먼저 입력한 뒤 order_item에 자식 데이터를 입력해야 한다.
+FK 제약조건은 잘못된 참조 데이터가 저장되는 것을 막아 데이터 정합성을 보장한다.
+
+============================================================
+3. 미니 리포트 만들기
+============================================================
+
+query 1. 완료 주문 기준 총 매출 조회
+description: 매출 관점에서 실제 완료된 주문에서 발생한 총 매출 조회
+total_sales
+-----------
+110500     
+
+query 2. 인기 메뉴 TOP 5 조회
+description: 상품 관점에서 어떤 메뉴가 가장 많이 팔렸는지 조회
+menu_id  menu_name      total_quantity_sold
+-------  -------------  -------------------
+13       치즈케이크     4                  
+1        아메리카노     3                  
+14       초코 브라우니  3                  
+5        초코라떼       2                  
+19       탄산수         2                  
+
+query 3. 고객별 누적 주문 금액 조회
+description: 고객 관점에서 주요 고객과 구매 규모 조회
+customer_id  customer_name  completed_order_count  total_order_amount
+-----------  -------------  ---------------------  ------------------
+1            김민준         2                      32800             
+2            이서연         1                      16100             
+10           임수빈         1                      14600             
+7            조서준         1                      12600             
+9            장현우         1                      12000             
+6            강유진         1                      11700             
+4            최하은         1                      10700             
