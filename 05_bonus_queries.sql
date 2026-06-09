@@ -129,3 +129,46 @@ order_item.menu_id는 menu.id를 참조하는 FK이다.
 
 FK 제약조건은 잘못된 참조 데이터가 저장되는 것을 막아 데이터 정합성을 보장한다.
 */
+
+
+-- 3. 미니 리포트 만들기
+
+-- query 1. 완료 주문 기준 총 매출 조회
+-- description: 매출 관점에서 실제 완료된 주문에서 발생한 총 매출 조회
+SELECT SUM(oi.quantity * oi.unit_price) AS total_sales
+FROM orders o
+INNER JOIN order_item oi 
+ON o.id = oi.order_id
+WHERE o.status = 'COMPLETED';
+
+-- query 2. 인기 메뉴 TOP 5 조회
+-- description: 상품 관점에서 어떤 메뉴가 가장 많이 팔렸는지 조회
+SELECT 
+    m.id AS menu_id,
+    m.name AS menu_name,
+    SUM(oi.quantity) AS total_quantity_sold
+FROM orders o
+INNER JOIN order_item oi
+ON o.id = oi.order_id
+INNER JOIN menu m
+ON oi.menu_id = m.id
+WHERE o.status = 'COMPLETED'
+GROUP BY m.id, m.name
+ORDER BY total_quantity_sold DESC, m.id ASC
+LIMIT 5;
+
+-- query 3. 고객별 누적 주문 금액 조회
+-- description: 고객 관점에서 주요 고객과 구매 규모 조회
+SELECT 
+    c.id AS customer_id,
+    c.name AS customer_name,
+    COUNT(DISTINCT o.id) AS completed_order_count,
+    SUM(oi.quantity * oi.unit_price) AS total_order_amount
+FROM customer c
+INNER JOIN orders o
+ON c.id = o.customer_id
+INNER JOIN order_item oi
+ON o.id = oi.order_id
+WHERE o.status = 'COMPLETED'
+GROUP BY c.id, c.name
+ORDER BY total_order_amount DESC, c.id ASC;
